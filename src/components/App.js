@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { GlobalStyle } from './Global';
 import { SearchBar } from './Searchbar/SearchBar';
 import { fetchImages } from './api';
@@ -14,92 +14,76 @@ const AppStyle = {
   gridGap: '16px',
   paddingBottom: '24px',
 };
-export class App extends Component {
-  state = {
-    images: [],
-    query: '',
-    page: 1,
-    isLoading: false,
-  };
 
-  async componentDidUpdate(prevProps, prevState) {
-    if (
-      prevState.query !== this.state.query ||
-      prevState.page !== this.state.page
-    ) {
+export const App = () => {
+  const [images, setImages] = useState([]);
+  const [query, setQuery] = useState('');
+  const [isLoading, setisLoading] = useState(false);
+  const [page, setPage] = useState(1);
+
+  useEffect(() => {
+    const fetchData = async () => {
       try {
-        this.setState({ isLoading: true });
-        const queryWithoutId = this.state.query.slice(
-          this.state.query.indexOf('/') + 1
-        );
-        const fetchedImages = await fetchImages(
-          queryWithoutId,
-          this.state.page
-        );
-        this.setState(prevState => ({
-          images: [...prevState.images, ...fetchedImages.hits],
-        }));
+        setisLoading(true);
+        const queryWithoutId = query.slice(query.indexOf('/') + 1);
+        const fetchedImages = await fetchImages(queryWithoutId, page);
+        setImages(prevImages => [...prevImages, ...fetchedImages.hits]);
       } catch (error) {
         console.error('Error fetching images:', error);
       } finally {
-        this.setState({ isLoading: false });
+        setisLoading(false);
       }
-    }
-  }
+    };
 
-  formHandler = query => {
+    if (query !== '' && (query !== setQuery || page !== setPage.page)) {
+      fetchData();
+    }
+  }, [query, page]);
+
+  const formHandler = query => {
     if (!query.trim()) {
-      toast.error('This field must be filled in ');
+      toast.error('This field must be filled in');
       return;
     }
-    this.setState(() => {
-      return {
-        images: [],
-        query: `${Date.now()}/${query}`,
-        page: 1,
-      };
-    });
-  };
-  handleLoadMore = () => {
-    this.setState(prevState => {
-      return {
-        page: prevState.page + 1,
-      };
-    });
+
+    setImages([]);
+    setQuery(`${Date.now()}/${query}`);
+    setPage(1);
   };
 
-  render() {
-    const { images, isLoading } = this.state;
-    const visibleImage = images.filter(image => image.length !== 0);
-    return (
-      <div style={AppStyle}>
-        <SearchBar onSubmit={this.formHandler} />
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-          }}
-        >
-          {isLoading && (
-            <Dna
-              visible={true}
-              height="80"
-              width="80"
-              ariaLabel="dna-loading"
-              wrapperStyle={{}}
-              wrapperClass="dna-wrapper"
-            />
-          )}
-        </div>
+  const handleLoadMore = () => {
+    setPage(prevPage => prevPage + 1);
+  };
 
-        <ImageGallery imagesList={images} />
-
-        <ImageGalleryItem />
-        {visibleImage.length > 0 && <Button onClick={this.handleLoadMore} />}
-        <Toaster />
-        <GlobalStyle />
+  const visibleImage = images.filter(image => image.length !== 0);
+  return (
+    <div style={AppStyle}>
+      <SearchBar onSubmit={formHandler} />
+      <div
+        style={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
+      >
+        {isLoading && (
+          <Dna
+            visible={true}
+            height="80"
+            width="80"
+            ariaLabel="dna-loading"
+            wrapperStyle={{}}
+            wrapperClass="dna-wrapper"
+          />
+        )}
       </div>
-    );
-  }
-}
+
+      <ImageGallery imagesList={images} />
+
+      <ImageGalleryItem />
+      {visibleImage.length > 0 && <Button onClick={handleLoadMore} />}
+      <Toaster />
+      <GlobalStyle />
+    </div>
+  );
+};
