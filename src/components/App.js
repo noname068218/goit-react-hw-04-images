@@ -22,6 +22,9 @@ export const App = () => {
   const [page, setPage] = useState(1);
 
   useEffect(() => {
+    if (query === '') {
+      return;
+    }
     const fetchData = async () => {
       try {
         setisLoading(true);
@@ -34,10 +37,7 @@ export const App = () => {
         setisLoading(false);
       }
     };
-
-    if (query !== '' && (query !== setQuery || page !== setPage.page)) {
-      fetchData();
-    }
+    fetchData();
   }, [query, page]);
 
   const formHandler = query => {
@@ -55,7 +55,6 @@ export const App = () => {
     setPage(prevPage => prevPage + 1);
   };
 
-  const visibleImage = images.filter(image => image.length !== 0);
   return (
     <div style={AppStyle}>
       <SearchBar onSubmit={formHandler} />
@@ -81,7 +80,7 @@ export const App = () => {
       <ImageGallery imagesList={images} />
 
       <ImageGalleryItem />
-      {visibleImage.length > 0 && <Button onClick={handleLoadMore} />}
+      {images.length > 0 && <Button onClick={handleLoadMore} />}
       <Toaster />
       <GlobalStyle />
     </div>
